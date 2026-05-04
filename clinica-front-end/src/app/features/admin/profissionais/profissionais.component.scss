@@ -1,0 +1,14 @@
+@use '../../../../assets/styles/crud.scss';
+
+.prof-cell { display: flex; align-items: center; gap: 10px; }
+.prof-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  color: white; font-weight: 700; font-size: 0.875rem;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.reg-code {
+  background: var(--color-bg); padding: 2px 8px;
+  border-radius: 4px; font-size: 0.8rem; font-family: monospace;
+  border: 1px solid var(--color-border);
+}

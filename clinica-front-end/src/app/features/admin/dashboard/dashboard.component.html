@@ -1,0 +1,80 @@
+<div class="page-enter">
+  <app-page-header title="Dashboard" [subtitle]="today"></app-page-header>
+
+  <section class="dashboard-hero">
+    <div class="hero-copy">
+      <span class="hero-kicker">Painel central</span>
+      <h2>Uma camada de controle mais limpa para a rotina administrativa da clinica.</h2>
+      <p>O dashboard concentra indicadores, entradas rápidas e navegação objetiva para reduzir ruído visual e manter o foco nas decisões operacionais.</p>
+    </div>
+    <div class="hero-badge">
+      <span class="hero-badge-label">Estrutura ativa</span>
+      <strong>{{ cards.length }}</strong>
+      <span>modulos principais</span>
+    </div>
+  </section>
+
+  <div class="stats-grid">
+    <a *ngFor="let card of cards; let i = index"
+       [routerLink]="card.route"
+       class="stat-card"
+       [class]="'card-' + card.color"
+       [style.animation-delay]="i * 60 + 'ms'">
+      <div class="stat-icon" [innerHTML]="safeIcon(card.icon)"></div>
+      <div class="stat-body">
+        <div class="stat-value">{{ stats[card.key] ?? 0 }}</div>
+        <div class="stat-label">{{ card.label }}</div>
+      </div>
+      <div class="stat-arrow">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+      </div>
+    </a>
+  </div>
+
+  <div class="quick-links">
+    <div class="section-heading">
+      <div>
+        <span class="section-kicker">Navegacao</span>
+        <h2 class="section-title">Acoes Rapidas</h2>
+      </div>
+      <p class="section-copy">Entradas diretas para as tarefas mais recorrentes da administracao.</p>
+    </div>
+    <div class="links-grid">
+      <a routerLink="/admin/escolas" class="quick-link">
+        <div class="ql-icon">ES</div>
+        <div class="ql-text">
+          <span class="ql-title">Gerenciar Escolas</span>
+          <span class="ql-desc">Cadastrar e inativar escolas</span>
+        </div>
+      </a>
+      <a routerLink="/admin/unidades" class="quick-link">
+        <div class="ql-icon">UN</div>
+        <div class="ql-text">
+          <span class="ql-title">Gerenciar Unidades</span>
+          <span class="ql-desc">Cadastrar e inativar unidades</span>
+        </div>
+      </a>
+      <a routerLink="/admin/profissionais" class="quick-link">
+        <div class="ql-icon">PS</div>
+        <div class="ql-text">
+          <span class="ql-title">Profissionais de Saúde</span>
+          <span class="ql-desc">Cadastrar e gerenciar profissionais</span>
+        </div>
+      </a>
+      <a routerLink="/admin/medicacoes" class="quick-link">
+        <div class="ql-icon">ME</div>
+        <div class="ql-text">
+          <span class="ql-title">Medicações</span>
+          <span class="ql-desc">Controle de estoque e validade</span>
+        </div>
+      </a>
+      <a routerLink="/admin/relatorios" class="quick-link">
+        <div class="ql-icon">RL</div>
+        <div class="ql-text">
+          <span class="ql-title">Relatórios</span>
+          <span class="ql-desc">Análises e dados do sistema</span>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>

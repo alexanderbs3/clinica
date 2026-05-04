@@ -1,0 +1,10 @@
+# frontend
+clinica-front-end/node_modules
+clinica-front-end/dist
+
+# backend (Spring)
+**/target/
+
+# geral
+.env
+.idea

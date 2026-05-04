@@ -1,0 +1,171 @@
+<div class="page-enter">
+  <app-page-header title="Pacientes" subtitle="Cadastre e gerencie os pacientes da clínica">
+    <app-btn variant="primary" (click)="openModal()">
+      <svg viewBox="0 0 20 20" fill="currentColor" style="width:16px;height:16px">
+        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
+      </svg>
+      Novo Paciente
+    </app-btn>
+  </app-page-header>
+
+  <div class="toast success" *ngIf="successMsg">
+    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+    {{ successMsg }}
+  </div>
+
+  <div class="filter-bar">
+    <div class="search-box">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+      <input type="text" placeholder="Buscar por nome ou e-mail..." [(ngModel)]="searchTerm" (ngModelChange)="applyFilter()"/>
+    </div>
+    <div class="filter-tabs">
+      <button [class.active]="filterStatus==='TODOS'"  (click)="filterStatus='TODOS';  applyFilter()">Todos</button>
+      <button [class.active]="filterStatus==='ATIVO'"  (click)="filterStatus='ATIVO';  applyFilter()">Ativos</button>
+      <button [class.active]="filterStatus==='INATIVO'" (click)="filterStatus='INATIVO'; applyFilter()">Inativos</button>
+    </div>
+  </div>
+
+  <div class="table-card" *ngIf="filtered.length > 0; else empty">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Paciente</th>
+          <th>Categoria</th>
+          <th>Vínculo</th>
+          <th>Telefone</th>
+          <th>Prontuário</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of filtered" [class.inactive]="item.status==='INATIVO'">
+          <td>
+            <div class="pac-cell">
+              <div class="pac-avatar">{{ item.nome[0] }}</div>
+              <div>
+                <div class="item-name">{{ item.nome }}</div>
+                <div class="text-muted" style="font-size:0.8rem">{{ item.email }}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="cat-chip cat-{{ item.categoria.toLowerCase().replace('_','-') }}">
+              {{ labelCategoria(item.categoria) }}
+            </span>
+          </td>
+          <td>
+            <div class="text-muted">{{ labelVinculo(item.vinculoTipo) }}</div>
+            <div style="font-size:0.8rem">{{ item.vinculoNome }}</div>
+          </td>
+          <td>{{ item.telefone }}</td>
+          <td>
+            <span class="pront-link" *ngIf="item.prontuarioId">
+              <svg viewBox="0 0 20 20" fill="currentColor" style="width:14px;height:14px;margin-right:4px">
+                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
+              </svg>
+              #{{ item.prontuarioId }}
+            </span>
+          </td>
+          <td>
+            <span class="badge" [class.badge-ativo]="item.status==='ATIVO'" [class.badge-inativo]="item.status==='INATIVO'">
+              {{ item.status }}
+            </span>
+          </td>
+          <td>
+            <div class="action-btns">
+              <button class="action-btn edit" (click)="openModal(item)" title="Editar">
+                <svg viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
+              </button>
+              <button class="action-btn"
+                [class.deactivate]="item.status==='ATIVO'"
+                [class.activate]="item.status==='INATIVO'"
+                (click)="toggleStatus(item)"
+                [title]="item.status==='ATIVO' ? 'Inativar' : 'Ativar'">
+                <svg *ngIf="item.status==='ATIVO'" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd"/></svg>
+                <svg *ngIf="item.status==='INATIVO'" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="table-footer">
+      <span>{{ filtered.length }} paciente(s)</span>
+    </div>
+  </div>
+
+  <ng-template #empty>
+    <app-empty-state title="Nenhum paciente encontrado" message="Cadastre um novo paciente para iniciar o atendimento.">
+      <app-btn variant="primary" (click)="openModal()">Novo Paciente</app-btn>
+    </app-empty-state>
+  </ng-template>
+</div>
+
+<!-- Modal Cadastro/Edição -->
+<app-modal [open]="modalOpen" [title]="editItem ? 'Editar Paciente' : 'Novo Paciente'" (close)="modalOpen=false" size="lg">
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <div class="form-grid cols-2">
+      <div class="form-group" style="grid-column:span 2" [class.has-error]="f('nome')?.invalid && f('nome')?.touched">
+        <label>Nome Completo *</label>
+        <input type="text" formControlName="nome" placeholder="Nome do paciente"/>
+        <span class="field-error" *ngIf="f('nome')?.touched && f('nome')?.errors?.['required']">Campo obrigatório</span>
+        <span class="field-error" *ngIf="f('nome')?.touched && f('nome')?.errors?.['minlength']">Mínimo 3 caracteres</span>
+      </div>
+      <div class="form-group" [class.has-error]="f('categoria')?.invalid && f('categoria')?.touched">
+        <label>Categoria *</label>
+        <select formControlName="categoria">
+          <option value="">Selecione a categoria...</option>
+          <option *ngFor="let c of categorias" [value]="c">{{ labelCategoria(c) }}</option>
+        </select>
+        <span class="field-error" *ngIf="f('categoria')?.touched && f('categoria')?.invalid">Campo obrigatório</span>
+      </div>
+      <div class="form-group" [class.has-error]="f('vinculoTipo')?.invalid && f('vinculoTipo')?.touched">
+        <label>Vínculo com a IES *</label>
+        <select formControlName="vinculoTipo">
+          <option *ngFor="let v of vinculos" [value]="v">{{ labelVinculo(v) }}</option>
+        </select>
+        <span class="field-error" *ngIf="f('vinculoTipo')?.touched && f('vinculoTipo')?.invalid">Campo obrigatório</span>
+      </div>
+      <div class="form-group" *ngIf="f('vinculoTipo')?.value === 'ESCOLA'" [class.has-error]="f('escolaId')?.invalid && f('escolaId')?.touched">
+        <label>Escola *</label>
+        <select formControlName="escolaId">
+          <option value="">Selecione a escola...</option>
+          <option *ngFor="let e of escolas" [value]="e.id">{{ e.nome }}</option>
+        </select>
+        <span class="field-error" *ngIf="f('escolaId')?.touched && f('escolaId')?.invalid">Campo obrigatório</span>
+      </div>
+      <div class="form-group" *ngIf="f('vinculoTipo')?.value === 'UNIDADE'" [class.has-error]="f('unidadeId')?.invalid && f('unidadeId')?.touched">
+        <label>Unidade *</label>
+        <select formControlName="unidadeId">
+          <option value="">Selecione a unidade...</option>
+          <option *ngFor="let u of unidades" [value]="u.id">{{ u.nome }}</option>
+        </select>
+        <span class="field-error" *ngIf="f('unidadeId')?.touched && f('unidadeId')?.invalid">Campo obrigatório</span>
+      </div>
+      <div class="form-group" [class.has-error]="f('telefone')?.invalid && f('telefone')?.touched">
+        <label>Telefone</label>
+        <input type="text" formControlName="telefone" placeholder="Ex: 71 99999-0000"/>
+      </div>
+      <div class="form-group" style="grid-column:span 2" [class.has-error]="f('email')?.invalid && f('email')?.touched">
+        <label>E-mail</label>
+        <input type="email" formControlName="email" placeholder="email@exemplo.com"/>
+        <span class="field-error" *ngIf="f('email')?.touched && f('email')?.errors?.['email']">E-mail inválido</span>
+      </div>
+    </div>
+
+    <div class="form-rule-info">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+      Ao cadastrar, um prontuário é criado automaticamente (RF011 / RN007). Pacientes não são excluídos, apenas inativados (RN006).
+    </div>
+
+    <div class="error-banner" *ngIf="errorMsg">{{ errorMsg }}</div>
+
+    <div class="modal-actions">
+      <app-btn variant="secondary" type="button" (click)="modalOpen=false">Cancelar</app-btn>
+      <app-btn variant="primary" type="submit" [loading]="saving">
+        {{ editItem ? 'Salvar Alterações' : 'Cadastrar Paciente' }}
+      </app-btn>
+    </div>
+  </form>
+</app-modal>

@@ -1,0 +1,83 @@
+<div class="page-enter">
+  <app-page-header title="Unidades" subtitle="Gerencie as unidades da IES">
+    <app-btn variant="primary" (click)="openModal()">
+      <svg viewBox="0 0 20 20" fill="currentColor" style="width:16px;height:16px"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+      Nova Unidade
+    </app-btn>
+  </app-page-header>
+
+  <div class="toast error" *ngIf="errorMsg">
+    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+    {{ errorMsg }}
+  </div>
+  <div class="toast success" *ngIf="successMsg"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>{{ successMsg }}</div>
+
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div><span>Carregando...</span>
+  </div>
+
+  <div class="filter-bar">
+    <div class="search-box">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+      <input type="text" placeholder="Buscar por nome ou responsável..." [(ngModel)]="searchTerm" (ngModelChange)="applyFilter()"/>
+    </div>
+  </div>
+
+  <div class="table-card" *ngIf="!loading && filtered.length > 0; else empty">
+    <table class="data-table">
+      <thead><tr><th>Nome</th><th>Responsável</th><th>IES</th><th>Status</th><th>Ações</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let item of filtered" [class.inactive]="item.status==='INATIVO'">
+          <td><span class="item-name">{{ item.nome }}</span></td>
+          <td>{{ item.responsavel }}</td>
+          <td><span class="ies-badge">{{ item.ies }}</span></td>
+          <td><span class="badge" [class.badge-ativo]="item.status==='ATIVO'" [class.badge-inativo]="item.status==='INATIVO'">{{ item.status }}</span></td>
+          <td>
+            <div class="action-btns">
+              <button class="action-btn edit" (click)="openModal(item)" title="Editar"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg></button>
+              <button class="action-btn deactivate" *ngIf="item.status==='ATIVO'" (click)="inativar(item)" title="Inativar unidade">
+                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd"/></svg>
+              </button>
+              <span class="text-muted" style="font-size:0.75rem" *ngIf="item.status==='INATIVO'">Inativo</span>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="table-footer"><span>{{ filtered.length }} registro(s)</span></div>
+  </div>
+
+  <ng-template #empty>
+    <app-empty-state *ngIf="!loading" title="Nenhuma unidade encontrada" message="Cadastre uma nova unidade ou ajuste os filtros.">
+      <app-btn variant="primary" (click)="openModal()">Nova Unidade</app-btn>
+    </app-empty-state>
+  </ng-template>
+</div>
+
+<app-modal [open]="modalOpen" [title]="editItem ? 'Editar Unidade' : 'Nova Unidade'" (close)="modalOpen=false">
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <div class="form-grid">
+      <div class="form-group" [class.has-error]="f('nome')?.invalid && f('nome')?.touched">
+        <label>Nome da Unidade *</label>
+        <input type="text" formControlName="nome" placeholder="Ex: Unidade Central"/>
+        <span class="field-error" *ngIf="f('nome')?.touched && f('nome')?.invalid">Mínimo 3 caracteres</span>
+      </div>
+      <div class="form-group" [class.has-error]="f('responsavel')?.invalid && f('responsavel')?.touched">
+        <label>Responsável *</label>
+        <input type="text" formControlName="responsavel" placeholder="Nome do responsável"/>
+        <span class="field-error" *ngIf="f('responsavel')?.touched && f('responsavel')?.invalid">Campo obrigatório</span>
+      </div>
+      <div class="form-group" [class.has-error]="f('ies')?.invalid && f('ies')?.touched">
+        <label>IES Vinculada *</label>
+        <input type="text" formControlName="ies" placeholder="Ex: IES Norte"/>
+        <span class="field-error" *ngIf="f('ies')?.touched && f('ies')?.invalid">Campo obrigatório</span>
+      </div>
+    </div>
+    <div class="form-rule-info"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>Cada unidade deve ter um responsável único (RN004). Unidades não podem ser excluídas (RN002).</div>
+    <div class="error-banner" *ngIf="errorMsg">{{ errorMsg }}</div>
+    <div class="modal-actions">
+      <app-btn variant="secondary" type="button" (click)="modalOpen=false">Cancelar</app-btn>
+      <app-btn variant="primary" type="submit" [loading]="saving">{{ editItem ? 'Salvar' : 'Cadastrar' }}</app-btn>
+    </div>
+  </form>
+</app-modal>

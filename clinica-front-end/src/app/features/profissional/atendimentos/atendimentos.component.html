@@ -1,0 +1,206 @@
+<div class="page-enter">
+  <app-page-header title="Atendimentos" subtitle="Registre e acompanhe os atendimentos clínicos">
+    <div class="rn013-alert" *ngIf="!cadastroCompleto">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+      Complete seu cadastro para registrar atendimentos
+    </div>
+    <app-btn variant="primary" (click)="openModal()" [disabled]="!cadastroCompleto">
+      <svg viewBox="0 0 20 20" fill="currentColor" style="width:16px;height:16px">
+        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
+      </svg>
+      Novo Atendimento
+    </app-btn>
+  </app-page-header>
+
+  <div class="toast success" *ngIf="successMsg">
+    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+    {{ successMsg }}
+  </div>
+
+  <!-- Search -->
+  <div class="filter-bar">
+    <div class="search-box">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+      <input type="text" placeholder="Buscar por paciente, profissional ou tipo..." [(ngModel)]="searchTerm"/>
+    </div>
+  </div>
+
+  <!-- Cards grid -->
+  <div class="atend-grid" *ngIf="filtered.length > 0; else empty">
+    <div *ngFor="let a of filtered" class="atend-card" [class]="'tipo-border-' + tipoColor(a.tipo)" (click)="verDetalhes(a)">
+      <div class="ac-header">
+        <div class="ac-tipo">
+          <span class="badge" [class]="'badge-tipo-' + tipoColor(a.tipo)">{{ a.tipo }}</span>
+        </div>
+        <div class="ac-date">{{ a.dataInicio | date:'dd/MM/yy HH:mm' }}</div>
+      </div>
+      <div class="ac-paciente">
+        <div class="pac-mini-avatar">{{ (a.pacienteNome || 'P')[0] }}</div>
+        <div class="ac-pac-info">
+          <div class="ac-pac-nome">{{ a.pacienteNome }}</div>
+          <div class="ac-prof">{{ a.profissionalNome }}</div>
+        </div>
+      </div>
+      <div class="ac-sintomas">{{ a.sintomas }}</div>
+      <div class="ac-footer">
+        <span class="ac-meds" *ngIf="a.medicacoesUsadas && a.medicacoesUsadas.length > 0">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a8 8 0 100 16A8 8 0 0010 2zm-1 5a1 1 0 012 0v4a1 1 0 01-2 0V7zm1-2a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"/></svg>
+          {{ a.medicacoesUsadas.length }} medicação(ões)
+        </span>
+        <span class="ac-view">Ver detalhes →</span>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #empty>
+    <app-empty-state title="Nenhum atendimento registrado" message="Inicie um novo atendimento para um paciente.">
+      <app-btn variant="primary" (click)="openModal()" [disabled]="!cadastroCompleto">Novo Atendimento</app-btn>
+    </app-empty-state>
+  </ng-template>
+</div>
+
+<!-- Modal Novo Atendimento -->
+<app-modal [open]="modalOpen" title="Registrar Atendimento" (close)="modalOpen=false" size="xl">
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <!-- Linha 1: Paciente e Tipo -->
+    <div class="form-grid cols-2" style="margin-bottom:16px">
+      <div class="form-group" [class.has-error]="f('pacienteId')?.invalid && f('pacienteId')?.touched">
+        <label>Paciente *</label>
+        <select formControlName="pacienteId">
+          <option value="">Selecione o paciente...</option>
+          <option *ngFor="let p of pacientes" [value]="p.id">{{ p.nome }}</option>
+        </select>
+        <span class="field-error" *ngIf="f('pacienteId')?.touched && f('pacienteId')?.invalid">Selecione um paciente</span>
+      </div>
+      <div class="form-group" [class.has-error]="f('tipo')?.invalid && f('tipo')?.touched">
+        <label>Tipo de Atendimento *</label>
+        <select formControlName="tipo">
+          <option *ngFor="let t of tipos" [value]="t">{{ t }}</option>
+        </select>
+      </div>
+      <div class="form-group" [class.has-error]="f('dataInicio')?.invalid && f('dataInicio')?.touched">
+        <label>Data/Hora Início *</label>
+        <input type="datetime-local" formControlName="dataInicio"/>
+        <span class="field-error" *ngIf="f('dataInicio')?.touched && f('dataInicio')?.invalid">Campo obrigatório</span>
+      </div>
+      <div class="form-group">
+        <label>Data/Hora Fim</label>
+        <input type="datetime-local" formControlName="dataFim"/>
+        <span class="field-hint">RN012: encerramento deve ser posterior ao início</span>
+      </div>
+    </div>
+
+    <!-- Clínico -->
+    <div class="form-grid cols-3" style="margin-bottom:16px">
+      <div class="form-group" [class.has-error]="f('sintomas')?.invalid && f('sintomas')?.touched">
+        <label>Sintomas *</label>
+        <textarea formControlName="sintomas" placeholder="Descreva os sintomas relatados..."></textarea>
+        <span class="field-error" *ngIf="f('sintomas')?.touched && f('sintomas')?.invalid">Campo obrigatório</span>
+      </div>
+      <div class="form-group" [class.has-error]="f('diagnostico')?.invalid && f('diagnostico')?.touched">
+        <label>Diagnóstico *</label>
+        <textarea formControlName="diagnostico" placeholder="Diagnóstico clínico..."></textarea>
+        <span class="field-error" *ngIf="f('diagnostico')?.touched && f('diagnostico')?.invalid">Campo obrigatório</span>
+      </div>
+      <div class="form-group" [class.has-error]="f('tratamento')?.invalid && f('tratamento')?.touched">
+        <label>Tratamento *</label>
+        <textarea formControlName="tratamento" placeholder="Tratamento prescrito..."></textarea>
+        <span class="field-error" *ngIf="f('tratamento')?.touched && f('tratamento')?.invalid">Campo obrigatório</span>
+      </div>
+    </div>
+
+    <!-- Medicações usadas (RF015) -->
+    <div class="meds-section">
+      <div class="meds-header">
+        <h4>Medicações Utilizadas (RF015)</h4>
+        <button type="button" class="add-med-btn" (click)="addMedicacao()">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+          Adicionar Medicação
+        </button>
+      </div>
+
+      <div class="med-rule-info" *ngIf="medicacoesArray.length === 0">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+        RN010: medicação deve estar ativa, válida e com estoque disponível. O estoque é atualizado automaticamente (RN011).
+      </div>
+
+      <div *ngFor="let med of medicacoesArray.controls; let i=index" class="med-row" [formGroup]="$any(med)">
+        <div class="form-group flex-2" [class.has-error]="fm(i,'medicacaoId')?.invalid && fm(i,'medicacaoId')?.touched">
+          <label>Medicação *</label>
+          <select formControlName="medicacaoId">
+            <option value="">Selecione...</option>
+            <option *ngFor="let m of medicacoesAtivas" [value]="m.id">
+              {{ m.nome }} — Estoque: {{ m.estoque }}
+            </option>
+          </select>
+          <span class="field-error" *ngIf="fm(i,'medicacaoId')?.touched && fm(i,'medicacaoId')?.invalid">Obrigatório</span>
+        </div>
+        <div class="form-group flex-1" [class.has-error]="fm(i,'quantidade')?.invalid && fm(i,'quantidade')?.touched">
+          <label>Qtd *</label>
+          <input type="number" formControlName="quantidade" min="1"/>
+          <span class="field-error" *ngIf="fm(i,'quantidade')?.touched && fm(i,'quantidade')?.invalid">Min: 1</span>
+        </div>
+        <div class="form-group flex-2" [class.has-error]="fm(i,'dosagem')?.invalid && fm(i,'dosagem')?.touched">
+          <label>Dosagem *</label>
+          <input type="text" formControlName="dosagem" placeholder="Ex: 1 comp. de 8/8h"/>
+          <span class="field-error" *ngIf="fm(i,'dosagem')?.touched && fm(i,'dosagem')?.invalid">Obrigatório</span>
+        </div>
+        <button type="button" class="remove-med-btn" (click)="removeMedicacao(i)" title="Remover">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="error-banner" *ngIf="errorMsg">{{ errorMsg }}</div>
+
+    <div class="modal-actions">
+      <app-btn variant="secondary" type="button" (click)="modalOpen=false">Cancelar</app-btn>
+      <app-btn variant="primary" type="submit" [loading]="saving">Registrar Atendimento</app-btn>
+    </div>
+  </form>
+</app-modal>
+
+<!-- Modal Detalhes -->
+<app-modal [open]="detalheOpen" title="Detalhes do Atendimento" (close)="detalheOpen=false" size="lg">
+  <div class="detalhe-view" *ngIf="selectedAtendimento">
+    <div class="dv-header">
+      <span class="badge" [class]="'badge-tipo-' + tipoColor(selectedAtendimento.tipo)">{{ selectedAtendimento.tipo }}</span>
+      <span class="dv-date">{{ selectedAtendimento.dataInicio | date:'dd/MM/yyyy HH:mm' }}</span>
+      <span *ngIf="selectedAtendimento.dataFim"> → {{ selectedAtendimento.dataFim | date:'HH:mm' }}</span>
+    </div>
+    <div class="dv-grid">
+      <div class="dv-item">
+        <span class="dv-label">Paciente</span>
+        <span class="dv-value">{{ selectedAtendimento.pacienteNome }}</span>
+      </div>
+      <div class="dv-item">
+        <span class="dv-label">Profissional</span>
+        <span class="dv-value">{{ selectedAtendimento.profissionalNome }}</span>
+      </div>
+      <div class="dv-item full">
+        <span class="dv-label">Sintomas</span>
+        <span class="dv-value">{{ selectedAtendimento.sintomas }}</span>
+      </div>
+      <div class="dv-item full">
+        <span class="dv-label">Diagnóstico</span>
+        <span class="dv-value">{{ selectedAtendimento.diagnostico }}</span>
+      </div>
+      <div class="dv-item full">
+        <span class="dv-label">Tratamento</span>
+        <span class="dv-value">{{ selectedAtendimento.tratamento }}</span>
+      </div>
+    </div>
+    <div class="dv-meds" *ngIf="selectedAtendimento.medicacoesUsadas && selectedAtendimento.medicacoesUsadas.length > 0">
+      <h4>Medicações Utilizadas</h4>
+      <div class="dv-med-item" *ngFor="let m of selectedAtendimento.medicacoesUsadas">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a8 8 0 100 16A8 8 0 0010 2zm-1 5a1 1 0 012 0v4a1 1 0 01-2 0V7zm1-2a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"/></svg>
+        <span class="dv-med-nome">{{ m.medicacaoNome }}</span>
+        <span class="dv-med-qtd">Qtd: {{ m.quantidade }}</span>
+        <span class="dv-med-dos">{{ m.dosagem }}</span>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <app-btn variant="secondary" type="button" (click)="detalheOpen=false">Fechar</app-btn>
+    </div>
+  </div>
+</app-modal>

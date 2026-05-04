@@ -1,0 +1,138 @@
+
+services:
+
+  # ── Infraestrutura ──────────────────────────────────────────────────────────
+
+  postgres-auth:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: clinica_auth
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASS:-postgres}
+    volumes:
+      - pg_auth:/var/lib/postgresql/data
+    networks: [clinica-net]
+
+  postgres-cadastro:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: clinica_cadastro
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASS:-postgres}
+    volumes:
+      - pg_cadastro:/var/lib/postgresql/data
+    networks: [clinica-net]
+
+  postgres-atendimento:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: clinica_atendimento
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASS:-postgres}
+    volumes:
+      - pg_atendimento:/var/lib/postgresql/data
+    networks: [clinica-net]
+
+  postgres-farmacia:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: clinica_farmacia
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASS:-postgres}
+    volumes:
+      - pg_farmacia:/var/lib/postgresql/data
+    networks: [clinica-net]
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"   # management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBIT_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBIT_PASS:-guest}
+    networks: [clinica-net]
+
+  # ── Microsserviços ──────────────────────────────────────────────────────────
+
+  ms-auth:
+    build: ./ms-auth
+    ports:
+      - "8081:8081"
+    environment:
+      DB_HOST: postgres-auth
+      DB_NAME: clinica_auth
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASS: ${DB_PASS:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-clinica-secret-change-in-production}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+    depends_on: [postgres-auth]
+    networks: [clinica-net]
+
+  ms-cadastro:
+    build: ./ms-cadastro
+    ports:
+      - "8082:8082"
+    environment:
+      DB_HOST: postgres-cadastro
+      DB_NAME: clinica_cadastro
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASS: ${DB_PASS:-postgres}
+      RABBIT_HOST: rabbitmq
+      RABBIT_USER: ${RABBIT_USER:-guest}
+      RABBIT_PASS: ${RABBIT_PASS:-guest}
+    depends_on: [postgres-cadastro, rabbitmq]
+    networks: [clinica-net]
+
+  ms-atendimento:
+    build: ./ms-atendimento
+    ports:
+      - "8083:8083"
+    environment:
+      DB_HOST: postgres-atendimento
+      DB_NAME: clinica_atendimento
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASS: ${DB_PASS:-postgres}
+      RABBIT_HOST: rabbitmq
+      RABBIT_USER: ${RABBIT_USER:-guest}
+      RABBIT_PASS: ${RABBIT_PASS:-guest}
+    depends_on: [postgres-atendimento, rabbitmq]
+    networks: [clinica-net]
+
+  ms-farmacia:
+    build: ./ms-farmacia
+    ports:
+      - "8084:8084"
+    environment:
+      DB_HOST: postgres-farmacia
+      DB_NAME: clinica_farmacia
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASS: ${DB_PASS:-postgres}
+      RABBIT_HOST: rabbitmq
+      RABBIT_USER: ${RABBIT_USER:-guest}
+      RABBIT_PASS: ${RABBIT_PASS:-guest}
+    depends_on: [postgres-farmacia, rabbitmq]
+    networks: [clinica-net]
+
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      AUTH_HOST: ms-auth
+      CADASTRO_HOST: ms-cadastro
+      ATENDIMENTO_HOST: ms-atendimento
+      FARMACIA_HOST: ms-farmacia
+      JWT_SECRET: ${JWT_SECRET:-clinica-secret-change-in-production}
+    depends_on: [ms-auth, ms-cadastro, ms-atendimento, ms-farmacia]
+    networks: [clinica-net]
+
+networks:
+  clinica-net:
+    driver: bridge
+
+volumes:
+  pg_auth:
+  pg_cadastro:
+  pg_atendimento:
+  pg_farmacia:

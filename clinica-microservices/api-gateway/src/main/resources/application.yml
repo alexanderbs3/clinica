@@ -1,0 +1,59 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.reactive.ReactiveSecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.reactive.ReactiveUserDetailsServiceAutoConfiguration
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:4200"
+              - "http://127.0.0.1:4200"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            exposedHeaders:
+              - Authorization
+            allowCredentials: true
+      routes:
+        - id: ms-auth
+          uri: http://${AUTH_HOST:localhost}:8081
+          predicates:
+            - Path=/auth/**
+
+        - id: ms-cadastro
+          uri: http://${CADASTRO_HOST:localhost}:8082
+          predicates:
+            - Path=/cadastro/**
+          filters:
+            - name: JwtAuthFilter
+
+        - id: ms-atendimento
+          uri: http://${ATENDIMENTO_HOST:localhost}:8083
+          predicates:
+            - Path=/atendimento/**
+          filters:
+            - name: JwtAuthFilter
+
+        - id: ms-farmacia
+          uri: http://${FARMACIA_HOST:localhost}:8084
+          predicates:
+            - Path=/farmacia/**
+          filters:
+            - name: JwtAuthFilter
+
+security:
+  token:
+    secret: ${JWT_SECRET:clinica-secret-change-in-production}

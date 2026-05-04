@@ -1,0 +1,7 @@
+@use '../../../../assets/styles/crud.scss';
+.stock-cell { display: flex; align-items: center; gap: 8px; }
+.stock-value { font-weight: 700; font-size: 1rem;
+  &.zero { color: var(--color-danger); }
+  &.low  { color: var(--color-warning); }
+}
+.vencida { color: var(--color-danger); font-weight: 500; }

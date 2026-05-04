@@ -1,0 +1,119 @@
+<div class="page-enter">
+  <app-page-header title="Prontuários" subtitle="Consulte o histórico completo dos pacientes (RF020 / RF021)"></app-page-header>
+
+  <div class="filter-bar">
+    <div class="search-box">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+      <input type="text" placeholder="Buscar prontuário por nome do paciente..." [(ngModel)]="searchTerm"/>
+    </div>
+    <span class="count-badge">{{ filtered.length }} prontuário(s)</span>
+  </div>
+
+  <div class="pront-grid" *ngIf="filtered.length > 0; else empty">
+    <div *ngFor="let p of filtered" class="pront-card" (click)="verProntuario(p)">
+      <div class="pc-left">
+        <div class="pc-avatar">{{ (p.pacienteNome || 'P')[0] }}</div>
+      </div>
+      <div class="pc-body">
+        <div class="pc-nome">{{ p.pacienteNome }}</div>
+        <div class="pc-meta">
+          <span class="cat-chip-sm">{{ getPacienteCategoria(p.pacienteId) }}</span>
+          <span class="badge" [class.badge-ativo]="getPacienteStatus(p.pacienteId)==='ATIVO'" [class.badge-inativo]="getPacienteStatus(p.pacienteId)==='INATIVO'">{{ getPacienteStatus(p.pacienteId) }}</span>
+        </div>
+        <div class="pc-summary" *ngIf="getUltimoAtendimento(p) as ultimo">
+          <div><strong>Último atendimento:</strong> {{ ultimo.dataInicio | date:'dd/MM/yyyy HH:mm' }}</div>
+          <div><strong>Tipo:</strong> {{ ultimo.tipo }}</div>
+          <div><strong>Sintomas:</strong> {{ ultimo.sintomas }}</div>
+          <div><strong>Tratamento:</strong> {{ ultimo.tratamento }}</div>
+        </div>
+        <div class="pc-atend">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/></svg>
+          {{ p.atendimentos.length }} atendimento(s) registrado(s)
+        </div>
+      </div>
+      <div class="pc-action">
+        <span class="pc-btn">Ver prontuário →</span>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #empty>
+    <app-empty-state
+      title="Nenhum prontuário encontrado"
+      message="Os prontuários são criados automaticamente ao cadastrar um paciente (RF011).">
+    </app-empty-state>
+  </ng-template>
+</div>
+
+<!-- Modal Prontuário Completo (RF021) -->
+<app-modal [open]="detalheOpen" [title]="'Prontuário — ' + (selectedProntuario?.pacienteNome || '')" (close)="detalheOpen=false" size="xl">
+  <div class="pront-detalhe" *ngIf="selectedProntuario">
+
+    <!-- Cabeçalho do paciente -->
+    <div class="pront-pac-header">
+      <div class="pph-avatar">{{ (selectedProntuario.pacienteNome || 'P')[0] }}</div>
+      <div class="pph-info">
+        <h3>{{ selectedProntuario.pacienteNome }}</h3>
+        <div class="pph-sub">
+          <span class="cat-chip-sm">{{ getPacienteCategoria(selectedProntuario.pacienteId) }}</span>
+          <span class="badge" [class.badge-ativo]="getPacienteStatus(selectedProntuario.pacienteId)==='ATIVO'" [class.badge-inativo]="getPacienteStatus(selectedProntuario.pacienteId)==='INATIVO'">{{ getPacienteStatus(selectedProntuario.pacienteId) }}</span>
+        </div>
+      </div>
+      <div class="pph-id">Prontuário #{{ selectedProntuario.id }}</div>
+    </div>
+
+    <!-- Linha do tempo de atendimentos -->
+    <div class="timeline-section">
+      <h4 class="timeline-title">Histórico de Atendimentos</h4>
+
+      <div *ngIf="selectedProntuario.atendimentos.length === 0" class="no-atend">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 16H15a2 2 0 002-2V5a1 1 0 100-2H3z" clip-rule="evenodd"/></svg>
+        Nenhum atendimento registrado neste prontuário.
+      </div>
+
+      <div class="timeline" *ngIf="selectedProntuario.atendimentos.length > 0">
+        <div *ngFor="let a of selectedProntuario.atendimentos; let last=last" class="timeline-item">
+          <div class="tl-connector">
+            <div class="tl-dot" [class]="'dot-' + tipoColor(a.tipo)"></div>
+            <div class="tl-line" *ngIf="!last"></div>
+          </div>
+          <div class="tl-content">
+            <div class="tl-header">
+              <span class="badge" [class]="'badge-tipo-' + tipoColor(a.tipo)">{{ a.tipo }}</span>
+              <span class="tl-date">{{ a.dataInicio | date:'dd/MM/yyyy HH:mm' }}</span>
+              <span *ngIf="a.dataFim" class="tl-end">→ {{ a.dataFim | date:'HH:mm' }}</span>
+            </div>
+            <div class="tl-prof">{{ a.profissionalNome }}</div>
+            <div class="tl-grid">
+              <div class="tl-field">
+                <span class="tl-label">Sintomas</span>
+                <span class="tl-val">{{ a.sintomas }}</span>
+              </div>
+              <div class="tl-field">
+                <span class="tl-label">Diagnóstico</span>
+                <span class="tl-val">{{ a.diagnostico }}</span>
+              </div>
+              <div class="tl-field full">
+                <span class="tl-label">Tratamento</span>
+                <span class="tl-val">{{ a.tratamento }}</span>
+              </div>
+            </div>
+            <!-- Medicações -->
+            <div class="tl-meds" *ngIf="a.medicacoesUsadas && a.medicacoesUsadas.length > 0">
+              <span class="tl-label">Medicações:</span>
+              <div class="tl-med-tags">
+                <span *ngFor="let m of a.medicacoesUsadas" class="tl-med-tag">
+                  {{ m.medicacaoNome }} ({{ m.quantidade }}x - {{ m.dosagem }})
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <app-btn variant="secondary" type="button" (click)="detalheOpen=false">Fechar</app-btn>
+    </div>
+  </div>
+</app-modal>

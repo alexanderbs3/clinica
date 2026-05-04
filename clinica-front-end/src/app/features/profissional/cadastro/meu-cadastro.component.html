@@ -1,0 +1,160 @@
+<div class="page-enter">
+  <app-page-header title="Meu Cadastro" subtitle="Visualize e complemente seus dados profissionais (RF008)"></app-page-header>
+
+  <!-- Loading -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <span>Carregando perfil...</span>
+  </div>
+
+  <div class="toast success" *ngIf="successMsg">
+    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+    {{ successMsg }}
+  </div>
+
+  <div class="toast error" *ngIf="errorMsg">
+    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+    {{ errorMsg }}
+  </div>
+
+  <div *ngIf="profissional && !loading" class="cadastro-layout">
+    <!-- Profile card -->
+    <div class="profile-card">
+      <div class="profile-avatar">{{ profissional.nome[0] }}</div>
+      <div class="profile-name">{{ profissional.nome }}</div>
+      <div class="profile-role">
+        {{ profissional.conselho || '—' }} — {{ profissional.especialidade || 'Especialidade não informada' }}
+      </div>
+      <div class="profile-role">
+        Formação: {{ profissional.formacao || 'Não informada' }}
+      </div>
+      <div class="profile-reg">{{ profissional.numeroRegistro || 'Nº Registro não informado' }}</div>
+      <div class="profile-status">
+        <span class="badge" [class.badge-ativo]="profissional.status==='ATIVO'" [class.badge-inativo]="profissional.status==='INATIVO'">{{ profissional.status }}</span>
+        <span class="badge badge-ativo" *ngIf="profissional.cadastroCompleto">Cadastro Completo</span>
+        <span class="badge badge-warning" *ngIf="!profissional.cadastroCompleto">Cadastro Incompleto</span>
+      </div>
+
+      <div class="rule-alert" *ngIf="!profissional.cadastroCompleto">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+        <span>Complete seu cadastro para realizar atendimentos (RN013)</span>
+      </div>
+    </div>
+
+    <!-- Form card — Dados Complementares -->
+    <div class="form-card">
+      <div class="form-card-header">
+        <h3>Dados Complementares</h3>
+        <button class="edit-toggle" *ngIf="!editMode && profissional.cadastroCompleto" (click)="editMode=true">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
+          Editar
+        </button>
+      </div>
+
+      <!-- View mode -->
+      <div class="info-grid" *ngIf="!editMode">
+        <div class="info-item">
+          <span class="info-label">Especialidade</span>
+          <span class="info-value">{{ profissional.especialidade || '—' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Formação</span>
+          <span class="info-value">{{ profissional.formacao || '—' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Conselho</span>
+          <span class="info-value">{{ profissional.conselho || '—' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Número de Registro</span>
+          <span class="info-value"><code>{{ profissional.numeroRegistro || '—' }}</code></span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Dias de Atendimento</span>
+          <span class="info-value">{{ profissional.diasAtendimento || '—' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Turnos de Atendimento</span>
+          <span class="info-value">{{ profissional.turnosAtendimento || '—' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Data de Cadastro</span>
+          <span class="info-value">{{ profissional.dataCadastro | date:'dd/MM/yyyy' }}</span>
+        </div>
+        <div class="info-item" *ngIf="!profissional.cadastroCompleto" style="grid-column: span 2">
+          <app-btn variant="primary" (click)="editMode=true">Complementar Cadastro</app-btn>
+        </div>
+      </div>
+
+      <!-- Edit mode — campos corretos conforme backend -->
+      <form [formGroup]="form" (ngSubmit)="save()" novalidate *ngIf="editMode">
+        <div class="form-grid cols-2">
+
+          <div class="form-group" [class.has-error]="f('especialidade')?.invalid && f('especialidade')?.touched">
+            <label>Especialidade *</label>
+            <input type="text" formControlName="especialidade" placeholder="Ex: Clínica Geral"/>
+            <span class="field-error" *ngIf="f('especialidade')?.touched && f('especialidade')?.invalid">Campo obrigatório</span>
+          </div>
+
+          <div class="form-group" [class.has-error]="f('formacao')?.invalid && f('formacao')?.touched">
+            <label>Formação *</label>
+            <input type="text" formControlName="formacao" placeholder="Ex: Bacharel em Enfermagem"/>
+            <span class="field-error" *ngIf="f('formacao')?.touched && f('formacao')?.invalid">Campo obrigatório</span>
+          </div>
+
+          <div class="form-group" [class.has-error]="f('conselho')?.invalid && f('conselho')?.touched">
+            <label>Conselho *</label>
+            <select formControlName="conselho">
+              <option value="">Selecione...</option>
+              <option *ngFor="let c of conselhos" [value]="c">{{ c }}</option>
+            </select>
+            <span class="field-error" *ngIf="f('conselho')?.touched && f('conselho')?.invalid">Campo obrigatório</span>
+          </div>
+
+          <div class="form-group full-col" [class.has-error]="f('numeroRegistro')?.invalid && f('numeroRegistro')?.touched">
+            <label>Número de Registro *</label>
+            <input type="text" formControlName="numeroRegistro" placeholder="Ex: CRM-12345"/>
+            <span class="field-error" *ngIf="f('numeroRegistro')?.touched && f('numeroRegistro')?.invalid">Campo obrigatório</span>
+          </div>
+
+          <div class="form-group" [class.has-error]="f('diasAtendimento')?.invalid && f('diasAtendimento')?.touched">
+            <label>Dias de Atendimento *</label>
+            <input type="text" formControlName="diasAtendimento" placeholder="Ex: SEG, QUA, SEX"/>
+            <span class="field-error" *ngIf="f('diasAtendimento')?.touched && f('diasAtendimento')?.invalid">Campo obrigatório</span>
+          </div>
+
+          <div class="form-group" [class.has-error]="f('turnosAtendimento')?.invalid && f('turnosAtendimento')?.touched">
+            <label>Turnos de Atendimento *</label>
+            <input type="text" formControlName="turnosAtendimento" placeholder="Ex: MANHA, TARDE"/>
+            <span class="field-error" *ngIf="f('turnosAtendimento')?.touched && f('turnosAtendimento')?.invalid">Campo obrigatório</span>
+          </div>
+
+        </div>
+        <div class="form-error" *ngIf="errorMsg">{{ errorMsg }}</div>
+        <div class="modal-actions">
+          <app-btn variant="secondary" type="button" (click)="editMode=false" *ngIf="profissional.cadastroCompleto">Cancelar</app-btn>
+          <app-btn variant="primary" type="submit" [loading]="saving">Salvar Complemento</app-btn>
+        </div>
+      </form>
+    </div>
+
+    <!-- Dados básicos (read-only — gerenciados pelo Admin) -->
+    <div class="form-card">
+      <div class="form-card-header"><h3>Dados Básicos (gerenciados pelo Administrador)</h3></div>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">Nome</span>
+          <span class="info-value">{{ profissional.nome }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Username</span>
+          <span class="info-value"><code>{{ profissional.username }}</code></span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Status</span>
+          <span class="badge" [class.badge-ativo]="profissional.status==='ATIVO'" [class.badge-inativo]="profissional.status==='INATIVO'">{{ profissional.status }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

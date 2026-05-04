@@ -1,0 +1,145 @@
+<div class="page-enter">
+  <app-page-header title="Profissionais de Saúde" subtitle="Gerencie os profissionais do sistema">
+    <app-btn variant="primary" (click)="openModal()">
+      <svg viewBox="0 0 20 20" fill="currentColor" style="width:16px;height:16px"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+      Novo Profissional
+    </app-btn>
+  </app-page-header>
+
+  <div class="toast success" *ngIf="successMsg">
+    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+    {{ successMsg }}
+  </div>
+  <div class="toast error" *ngIf="errorMsg">
+    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+    {{ errorMsg }}
+  </div>
+
+  <div class="filter-bar">
+    <div class="search-box">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+      <input type="text" placeholder="Buscar por nome ou especialidade..." [(ngModel)]="searchTerm" (ngModelChange)="applyFilter()"/>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div><span>Carregando...</span>
+  </div>
+
+  <div class="table-card" *ngIf="!loading && filtered.length > 0; else empty">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Profissional</th>
+          <th>Especialidade</th>
+          <th>Conselho / Registro</th>
+          <th>Cadastro</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of filtered" [class.inactive]="item.status==='INATIVO'">
+          <td>
+            <div class="prof-cell">
+              <div class="prof-avatar">{{ item.nome[0] }}</div>
+              <div>
+                <div class="item-name">{{ item.nome }}</div>
+                <div class="text-muted" style="font-size:0.8rem">{{ item.username }}</div>
+              </div>
+            </div>
+          </td>
+          <td>{{ item.especialidade || '—' }}</td>
+          <td>
+            <span *ngIf="item.conselho">{{ item.conselho }}</span>
+            <code class="reg-code" *ngIf="item.numeroRegistro"> {{ item.numeroRegistro }}</code>
+            <span class="text-muted" *ngIf="!item.conselho">Pendente</span>
+          </td>
+          <td>
+            <span class="badge" [class.badge-ativo]="item.cadastroCompleto" [class.badge-warning]="!item.cadastroCompleto">
+              {{ item.cadastroCompleto ? 'Completo' : 'Pendente' }}
+            </span>
+          </td>
+          <td>
+            <span class="badge" [class.badge-ativo]="item.status==='ATIVO'" [class.badge-inativo]="item.status==='INATIVO'">
+              {{ item.status }}
+            </span>
+          </td>
+          <td>
+            <div class="action-btns">
+              <!-- Somente inativar (backend não tem reativar — RN005) -->
+              <button
+                class="action-btn deactivate"
+                *ngIf="item.status==='ATIVO'"
+                (click)="inativar(item)"
+                title="Inativar profissional">
+                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd"/></svg>
+              </button>
+              <span class="text-muted" style="font-size:0.75rem" *ngIf="item.status==='INATIVO'">Inativo</span>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="table-footer"><span>{{ filtered.length }} profissional(is)</span></div>
+  </div>
+
+  <ng-template #empty>
+    <app-empty-state *ngIf="!loading" title="Nenhum profissional encontrado" message="Cadastre um novo profissional de saúde.">
+      <app-btn variant="primary" (click)="openModal()">Novo Profissional</app-btn>
+    </app-empty-state>
+  </ng-template>
+</div>
+
+<!-- Modal de cadastro — campos corretos: nome, username, password -->
+<app-modal [open]="modalOpen" title="Novo Profissional de Saúde" (close)="modalOpen=false" size="md">
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <div class="form-grid cols-1">
+
+      <div class="form-group" [class.has-error]="f('nome')?.invalid && f('nome')?.touched">
+        <label>Nome Completo *</label>
+        <input type="text" formControlName="nome" placeholder="Nome do profissional"/>
+        <span class="field-error" *ngIf="f('nome')?.touched && f('nome')?.invalid">Mínimo 3 caracteres</span>
+      </div>
+
+      <div class="form-group" [class.has-error]="f('username')?.invalid && f('username')?.touched">
+        <label>Username (login) *</label>
+        <input type="text" formControlName="username" placeholder="Ex: dr.joao" autocomplete="off"/>
+        <span class="field-error" *ngIf="f('username')?.touched && f('username')?.invalid">Mínimo 3 caracteres</span>
+      </div>
+
+      <div class="form-group" [class.has-error]="f('password')?.invalid && f('password')?.touched">
+        <label>Senha Inicial *</label>
+        <div class="input-with-icon">
+          <input
+            [type]="showPassword ? 'text' : 'password'"
+            formControlName="password"
+            placeholder="Mínimo 6 caracteres"
+            autocomplete="new-password"/>
+          <button type="button" class="icon-btn" (click)="showPassword=!showPassword" title="Mostrar/ocultar senha">
+            <svg viewBox="0 0 20 20" fill="currentColor">
+              <path *ngIf="!showPassword" d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+              <path *ngIf="!showPassword" fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>
+              <path *ngIf="showPassword" fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clip-rule="evenodd"/>
+              <path *ngIf="showPassword" d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.064 7 9.542 7 .847 0 1.669-.105 2.454-.303z"/>
+            </svg>
+          </button>
+        </div>
+        <span class="field-error" *ngIf="f('password')?.touched && f('password')?.invalid">Mínimo 6 caracteres</span>
+      </div>
+
+    </div>
+
+    <div class="form-rule-info">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+      O profissional complementará especialidade, conselho e número de registro no próprio perfil após o primeiro acesso (RF008 / RN013).
+    </div>
+
+    <div class="error-banner" *ngIf="errorMsg">{{ errorMsg }}</div>
+    <div class="modal-actions">
+      <app-btn variant="secondary" type="button" (click)="modalOpen=false">Cancelar</app-btn>
+      <app-btn variant="primary" type="submit" [loading]="saving">Cadastrar</app-btn>
+    </div>
+  </form>
+</app-modal>

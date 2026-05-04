@@ -1,0 +1,130 @@
+@use "../../../../assets/styles/crud.scss";
+
+.req-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.req-card {
+  display: flex;
+  align-items: stretch;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+  &:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+}
+
+.rc-tipo-bar {
+  width: 5px;
+  flex-shrink: 0;
+}
+.req-urgente .rc-tipo-bar {
+  background: var(--color-danger);
+}
+.req-critico .rc-tipo-bar {
+  background: var(--color-warning);
+}
+.req-preventivo .rc-tipo-bar {
+  background: var(--color-success);
+}
+
+.rc-body {
+  flex: 1;
+  padding: 16px 20px;
+}
+.rc-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.rc-date {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin-left: auto;
+}
+.rc-med {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 6px;
+}
+.rc-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  strong {
+    color: var(--color-text-primary);
+  }
+}
+.rc-obs {
+  font-style: italic;
+}
+
+.rc-status {
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+}
+.status-chip {
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+// Radio group
+.tipo-radio-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.tipo-radio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--color-border);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-size: 0.9rem;
+  font-weight: 500;
+
+  input[type="radio"] {
+    display: none;
+  }
+
+  &.radio-urgente.selected {
+    border-color: var(--color-danger);
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+  }
+  &.radio-critico.selected {
+    border-color: var(--color-warning);
+    background: var(--color-warning-light);
+    color: var(--color-warning);
+  }
+  &.radio-preventivo.selected {
+    border-color: var(--color-success);
+    background: var(--color-success-light);
+    color: var(--color-success);
+  }
+
+  &:hover {
+    border-color: var(--color-primary);
+  }
+}

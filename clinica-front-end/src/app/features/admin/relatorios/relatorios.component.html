@@ -1,0 +1,115 @@
+<div class="page-enter">
+  <app-page-header title="Relatórios" subtitle="Visão geral do sistema clínico"></app-page-header>
+
+  <div class="report-grid">
+    <!-- Resumo Geral -->
+    <div class="report-card full-width">
+      <h3 class="card-title">📊 Resumo Geral do Sistema</h3>
+      <div class="summary-row">
+        <div class="summary-item">
+          <span class="si-value">{{ stats.escolas }}</span>
+          <span class="si-label">Escolas Ativas</span>
+        </div>
+        <div class="summary-item">
+          <span class="si-value">{{ stats.unidades }}</span>
+          <span class="si-label">Unidades Ativas</span>
+        </div>
+        <div class="summary-item">
+          <span class="si-value">{{ stats.profissionais }}</span>
+          <span class="si-label">Profissionais</span>
+        </div>
+        <div class="summary-item">
+          <span class="si-value">{{ ativosCount }}</span>
+          <span class="si-label">Pacientes Ativos</span>
+        </div>
+        <div class="summary-item">
+          <span class="si-value">{{ stats.atendimentos }}</span>
+          <span class="si-label">Atendimentos</span>
+        </div>
+        <div class="summary-item" [class.alert]="medicacoesVencidas > 0">
+          <span class="si-value">{{ medicacoesVencidas }}</span>
+          <span class="si-label">Medicações Vencidas</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tipos de atendimento -->
+    <div class="report-card">
+      <h3 class="card-title">🏥 Atendimentos por Tipo</h3>
+      <div class="bar-list">
+        <div *ngFor="let t of tipoAtendimentos" class="bar-item">
+          <div class="bar-label">{{ t.tipo }}</div>
+          <div class="bar-track">
+            <div class="bar-fill" [style.width]="(t.count / stats.atendimentos * 100) + '%'" [class]="'tipo-' + t.tipo.toLowerCase()"></div>
+          </div>
+          <div class="bar-count">{{ t.count }}</div>
+        </div>
+        <div *ngIf="tipoAtendimentos.length===0" class="no-data">Nenhum atendimento registrado</div>
+      </div>
+    </div>
+
+    <!-- Categorias de pacientes -->
+    <div class="report-card">
+      <h3 class="card-title">👥 Pacientes por Categoria</h3>
+      <div class="cat-list">
+        <div *ngFor="let c of categoriaPacientes" class="cat-item">
+          <div class="cat-dot"></div>
+          <span class="cat-name">{{ c.cat }}</span>
+          <span class="cat-count">{{ c.count }}</span>
+        </div>
+        <div *ngIf="categoriaPacientes.length===0" class="no-data">Nenhum paciente cadastrado</div>
+      </div>
+    </div>
+
+    <!-- Medicações críticas -->
+    <div class="report-card">
+      <h3 class="card-title">💊 Medicações com Alerta</h3>
+      <div class="alert-list">
+        <div *ngFor="let m of medicacoes" class="alert-item" [class.hidden]="m.estoque >= 20 && m.validade >= today">
+          <ng-container *ngIf="m.estoque < 20 || m.validade < today">
+            <div class="ai-name">{{ m.nome }}</div>
+            <div class="ai-badges">
+              <span class="badge badge-warning" *ngIf="m.estoque < 20 && m.estoque > 0">Estoque baixo: {{ m.estoque }}</span>
+              <span class="badge badge-inativo" *ngIf="m.estoque === 0">Sem estoque</span>
+              <span class="badge badge-inativo" *ngIf="m.validade < today">Vencida</span>
+            </div>
+          </ng-container>
+        </div>
+        <div class="no-data" *ngIf="stats.medicacoesEstoqueBaixo === 0 && medicacoesVencidas === 0">Todas as medicações estão em dia ✓</div>
+      </div>
+    </div>
+
+    <!-- Profissionais sem cadastro completo -->
+    <div class="report-card">
+      <h3 class="card-title">⚠️ Cadastros Pendentes</h3>
+      <div class="pending-list">
+        <div *ngFor="let p of profissionais" class="pending-item" [class.hidden]="p.cadastroCompleto">
+          <ng-container *ngIf="!p.cadastroCompleto && p.status==='ATIVO'">
+            <div class="pi-avatar">{{ p.nome[0] }}</div>
+            <div class="pi-info">
+              <div class="pi-name">{{ p.nome }}</div>
+              <div class="pi-sub">{{ p.especialidade }} — Cadastro incompleto</div>
+            </div>
+            <span class="badge badge-warning">Pendente</span>
+          </ng-container>
+        </div>
+        <div class="no-data" *ngIf="profCompletos === stats.profissionais">Todos os cadastros completos ✓</div>
+      </div>
+    </div>
+
+    <!-- Requisições -->
+    <div class="report-card">
+      <h3 class="card-title">🔔 Requisições de Medicação</h3>
+      <div class="req-list">
+        <div *ngFor="let r of requisicoes" class="req-item">
+          <div class="ri-info">
+            <div class="ri-name">{{ r.medicacaoNome }}</div>
+            <div class="ri-sub">Qtd: {{ r.quantidade }} — {{ r.data }}</div>
+          </div>
+          <span class="badge" [class.badge-urgente]="r.tipo==='SAIDA'" [class.badge-preventivo]="r.tipo==='ENTRADA'">{{ r.tipo }}</span>
+        </div>
+        <div class="no-data" *ngIf="requisicoes.length===0">Nenhuma requisição pendente</div>
+      </div>
+    </div>
+  </div>
+</div>

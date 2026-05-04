@@ -1,0 +1,108 @@
+<div class="page-enter">
+  <app-page-header title="Requisições de Medicação" subtitle="Solicite aquisição de medicamentos ao administrador (RF017)">
+    <app-btn variant="primary" (click)="modalOpen=true; buildForm()">
+      <svg viewBox="0 0 20 20" fill="currentColor" style="width:16px;height:16px">
+        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
+      </svg>
+      Nova Requisição
+    </app-btn>
+  </app-page-header>
+
+  <div class="toast success" *ngIf="successMsg">
+    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+    {{ successMsg }}
+  </div>
+
+  <div class="filter-bar">
+    <div class="search-box">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+      <input type="text" placeholder="Buscar por medicação..." [(ngModel)]="searchTerm"/>
+    </div>
+    <div class="filter-tabs">
+      <button [class.active]="filterTipo==='TODOS'"     (click)="filterTipo='TODOS'">Todos</button>
+      <button [class.active]="filterTipo==='SAIDA'"     (click)="filterTipo='SAIDA'">Saída</button>
+      <button [class.active]="filterTipo==='ENTRADA'"   (click)="filterTipo='ENTRADA'">Entrada</button>
+    </div>
+  </div>
+
+  <div class="req-list" *ngIf="filtered.length > 0; else empty">
+    <div *ngFor="let r of filtered" class="req-card" [class]="'req-' + r.tipo.toLowerCase()">
+      <div class="rc-tipo-bar"></div>
+      <div class="rc-body">
+        <div class="rc-header">
+          <span class="badge" [class.badge-urgente]="r.tipo==='SAIDA'" [class.badge-preventivo]="r.tipo==='ENTRADA'">
+            {{ tipoLabel(r.tipo) }}
+          </span>
+          <span class="rc-date">{{ r.data | date:'dd/MM/yyyy' }}</span>
+        </div>
+        <div class="rc-med">{{ r.medicacaoNome }}</div>
+        <div class="rc-info">
+          <span class="rc-qtd">Quantidade solicitada: <strong>{{ r.quantidade }}</strong></span>
+          <span class="rc-obs" *ngIf="r.observacao">• {{ r.observacao }}</span>
+        </div>
+      </div>
+      <div class="rc-status">
+        <span class="status-chip">Enviada</span>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #empty>
+    <app-empty-state
+      title="Nenhuma requisição"
+      message="Envie uma solicitação de aquisição de medicamento ao administrador.">
+      <app-btn variant="primary" (click)="modalOpen=true; buildForm()">Nova Requisição</app-btn>
+    </app-empty-state>
+  </ng-template>
+</div>
+
+<!-- Modal Nova Requisição -->
+<app-modal [open]="modalOpen" title="Nova Requisição de Medicação" (close)="modalOpen=false" size="md">
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <div class="form-grid">
+      <div class="form-group" [class.has-error]="f('medicacaoId')?.invalid && f('medicacaoId')?.touched">
+        <label>Medicação *</label>
+        <select formControlName="medicacaoId">
+          <option value="">Selecione a medicação...</option>
+          <option *ngFor="let m of medicacoesAtivas" [value]="m.id">
+            {{ m.nome }} — Estoque atual: {{ m.estoque }}
+          </option>
+        </select>
+        <span class="field-error" *ngIf="f('medicacaoId')?.touched && f('medicacaoId')?.invalid">Selecione uma medicação</span>
+      </div>
+
+      <div class="form-group" [class.has-error]="f('quantidade')?.invalid && f('quantidade')?.touched">
+        <label>Quantidade Solicitada *</label>
+        <input type="number" formControlName="quantidade" min="1" placeholder="Ex: 100"/>
+        <span class="field-error" *ngIf="f('quantidade')?.touched && f('quantidade')?.invalid">Mínimo 1</span>
+      </div>
+
+      <div class="form-group" [class.has-error]="f('tipo')?.invalid && f('tipo')?.touched">
+        <label>Classificação da Requisição * (RF018)</label>
+        <div class="tipo-radio-group">
+          <label *ngFor="let t of tipos" class="tipo-radio" [class]="'radio-' + t.toLowerCase()" [class.selected]="f('tipo')?.value === t">
+            <input type="radio" formControlName="tipo" [value]="t"/>
+            <span>{{ tipoLabel(t) }}</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Observação</label>
+        <textarea formControlName="observacao" placeholder="Justificativa ou informações adicionais..." style="min-height:70px"></textarea>
+      </div>
+    </div>
+
+    <div class="form-rule-info">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+      A requisição será enviada ao Administrador para aprovação e aquisição (RF017).
+    </div>
+
+    <div class="error-banner" *ngIf="errorMsg">{{ errorMsg }}</div>
+
+    <div class="modal-actions">
+      <app-btn variant="secondary" type="button" (click)="modalOpen=false">Cancelar</app-btn>
+      <app-btn variant="primary" type="submit" [loading]="saving">Enviar Requisição</app-btn>
+    </div>
+  </form>
+</app-modal>
